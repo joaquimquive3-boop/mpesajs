@@ -158,11 +158,37 @@ export class Service {
       case B2B_PAYMENT:
         return map({ from: "serviceProviderCode" });
 
-      case REVERSAL:
-        return map({
-          initiatorIdentifier: "initiatorIdentifier",
-          securityCredential: "securityCredential",
-          to: "serviceProviderCode",
+      switch (opcode) {
+  case C2B_PAYMENT:
+    return map({ to: "serviceProviderCode" });
+
+  case B2C_PAYMENT:
+  case B2B_PAYMENT:
+    return map({ from: "serviceProviderCode" });
+
+  case REVERSAL:
+    return {
+      Initiator: intent.initiatorIdentifier || intent.initiator,
+      SecurityCredential: intent.securityCredential || intent.securityCredentials,
+      CommandID: "TransactionReversal",
+      TransactionID: intent.transactionId || intent.mpesaReceiptNumber,
+      Amount: intent.amount,
+      ReceiverParty: intent.serviceProviderCode || intent.shortcode,
+      ReceiverIdentifierType: "11",                    // 11 = Organização | 1 = MSISDN | 4 = Till
+      Remarks: intent.remarks || "Reversão de transação",
+      QueueTimeOutURL: intent.queueTimeoutUrl || "https://teudominio.com/mpesa/timeout",
+      ResultURL: intent.resultUrl || "https://teudominio.com/mpesa/reversal-result",
+      Occassion: intent.occassion || ""
+    };
+
+  case QUERY_TRANSACTION_STATUS:
+    return map({ from: "serviceProviderCode" });
+
+  default:
+    return intent;
+}
+  
+      
         });
 
       case QUERY_TRANSACTION_STATUS:
